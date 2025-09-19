@@ -3,3 +3,10 @@
 3.recursively track the directories of the repo usigng the function getAllFiles inside the file file.js.
 4.caulculating ram of the project using dependencies of the project which are stored in package.json file using 
 the function estimateRam inside the file estimateRam.js.
+
+ubantu commands
+*sudo apt-get update
+*sudo apt-get install redies
+*sudo apt-get install redis
+*sudo service redis-server start
+*redis-cli
