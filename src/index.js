@@ -5,6 +5,9 @@ import { generate } from "./util.js";
 import path from "path";
 import { getAllFiles } from "./file.js";
 import { estimateRAM } from "./estimateRam.js";
+import { createClient } from "redis";
+const publisher = createClient();
+publisher.connect();
 
 
 const PORT = 4000;
@@ -18,14 +21,16 @@ app.post("/deploy", async (req, res) => {
     const repoUrl = req.body.repoUrl;
     console.log(repoUrl);
     const id = generate();
-    await simpleGit().clone(repoUrl,  `output/${id}`);
-    const files = getAllFiles( `output/${id}`);
+    await simpleGit().clone(repoUrl,  `../output/${id}`);
+    const files = getAllFiles( `../output/${id}`);
     // files.forEach(file => {
     //     S3.upload(file);
     // })
     //Put this to s3
+
+    publisher.lPush("build-queue", id);
     
-    console.log(estimateRAM(`output/${id}`));
+    console.log(estimateRAM(`../output/${id}`));
         
 
     res.json({
