@@ -1,45 +1,43 @@
 import express from "express";
 import cors from "cors";
-import { simpleGit } from "simple-git";
-import { generate } from "./util.js";
+import simpleGit from "simple-git";
+import fs from "fs";
 import path from "path";
-import { getAllFiles } from "./file.js";
+import { generate } from "./util.js";
 import { estimateRAM } from "./estimateRam.js";
 import { createClient } from "redis";
-const publisher = createClient();
-publisher.connect();
 
+const publisher = createClient({ url: process.env.REDIS_URL });
+await publisher.connect();
 
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
+const REPOS_DIR = process.env.REPOS_DIR || path.join(process.cwd(), "repos");
+
 const app = express();
-
 app.use(cors());
-app.use(express.json()); //middleware
+app.use(express.json());
 
 app.post("/deploy", async (req, res) => {
-    try{
+  try {
     const repoUrl = req.body.repoUrl;
-    console.log(repoUrl);
+    if (!repoUrl) return res.status(400).json({ error: "repoUrl required" });
+
     const id = generate();
-    await simpleGit().clone(repoUrl,  `../output/${id}`);
-    const files = getAllFiles( `../output/${id}`);
-    // files.forEach(file => {
-    //     S3.upload(file);
-    // })
-    //Put this to s3
+    const repoPath = path.join(REPOS_DIR, id);
 
-    publisher.lPush("build-queue", id);
-    
-    console.log(estimateRAM(`../output/${id}`));
-        
+    fs.mkdirSync(repoPath, { recursive: true });
 
-    res.json({
-        id: id
-    });
-} catch(err) {
-    console.log("Deploy error : ", err);
-    res.status(500).json({ error: err.message})
-}
+    await simpleGit().clone(repoUrl, repoPath);
+
+    // ✅ Run RAM estimation
+    const ramEstimate = estimateRAM(repoPath);
+
+    // ✅ Send estimate back
+    res.json({ id, path: repoPath, ramEstimate });
+  } catch (err) {
+    console.error("Deploy error:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
-app.listen(PORT, () => { console.log("app is listening on the port ", PORT); });
-//# sourceMappingURL=index.js.map
+
+app.listen(PORT, () => console.log(`App running on port ${PORT}`));
