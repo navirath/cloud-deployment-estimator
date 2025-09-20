@@ -4,9 +4,9 @@ import { simpleGit } from "simple-git";
 import { generate } from "./util.js";
 import path from "path";
 import { getAllFiles } from "./file.js";
-import { estimateRAM } from "./RAM/estimateRam.js";
+import { estimateRAM } from "./estimateRam.js";
 import { createClient } from "redis";
-import { benchmarkWithCPU } from "./CPU/cpu.js";
+import { benchmarkWithCPU } from "./cpu.js";
 const publisher = createClient();
 publisher.connect();
 
